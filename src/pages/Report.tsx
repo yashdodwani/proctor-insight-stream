@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { MonitoringCard } from "@/components/MonitoringCard";
 import { SeverityBadge } from "@/components/SeverityBadge";
-import { Shield, Eye, Monitor, Volume2, AlertTriangle } from "lucide-react";
+import { Shield, Eye, Monitor, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 interface Violation {
@@ -164,7 +164,7 @@ const Report = () => {
         </div>
 
         {/* Monitoring Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <MonitoringCard
             icon={Eye}
             title="Face Detection"
@@ -192,13 +192,6 @@ const Report = () => {
                 : "Suspicious screen ac..."
             }
             scoreColor={getScoreColor(monitoring_status.screen_activity.score)}
-          />
-          <MonitoringCard
-            icon={Volume2}
-            title="Audio Monitoring"
-            score="N/A"
-            details={monitoring_status.audio_monitoring.message || "No suspicions"}
-            scoreColor="text-muted-foreground"
           />
         </div>
 
@@ -292,9 +285,6 @@ const Report = () => {
             <p className="text-foreground font-medium">{overall_assessment.message}</p>
             {violations.summary.critical > 0 && (
               <p className="text-critical font-semibold">Critical violations require attention.</p>
-            )}
-            {monitoring_status.audio_monitoring.status === "disabled" && (
-              <p className="text-muted-foreground">Audio monitoring was not active.</p>
             )}
           </div>
         </Card>
