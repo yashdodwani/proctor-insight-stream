@@ -5,6 +5,7 @@ import { MonitoringCard } from "@/components/MonitoringCard";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { Shield, Eye, Monitor, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { API_ENDPOINTS } from "@/config/api";
 
 interface Violation {
   type: string;
@@ -72,7 +73,7 @@ const Report = () => {
     const fetchReport = async () => {
       try {
         const response = await fetch(
-          `https://proctoring-reports-4.onrender.com/reports/candidate/${candidateId}`
+          API_ENDPOINTS.getCandidateReports(candidateId || '')
         );
         
         if (!response.ok) {

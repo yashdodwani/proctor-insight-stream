@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-02-21] - Backend URL Update
+
+### Changed
+- Updated backend API URL from `https://proctoring-reports-4.onrender.com` to `https://proctoring.formapply.in`
+- Refactored API configuration to use centralized config file
+
+### Added
+- Created `src/config/api.ts` for centralized API endpoint management
+- Added `.env` and `.env.example` files for environment-based configuration
+- Added support for `VITE_API_BASE_URL` environment variable
+
+### Files Affected
+- `src/pages/Report.tsx` - Updated to use API config instead of hardcoded URL
+- `src/config/api.ts` - New API configuration file
+- `.env` - Environment configuration
+- `.env.example` - Environment template for developers
+- `.gitignore` - Added .env files to prevent committing sensitive data
+
+### API Endpoints
+- **Base URL**: `https://proctoring.formapply.in`
+- **Get Report**: `/reports/report/{session_id}`
+- **Get Candidate Reports**: `/reports/candidate/{candidate_id}`
+
+---
+
 ## [2025-02-21] - Repository Cleanup
 
 ### Removed
