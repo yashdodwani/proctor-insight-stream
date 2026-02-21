@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-02-21] - Fix Routing for /reports/candidate/:candidateId
+
+### Fixed
+- Added route `/reports/candidate/:candidateId` to match API URL structure
+- Now both `/report/:candidateId` and `/reports/candidate/:candidateId` work
+
+### Files Affected
+- `src/App.tsx` - Added new route pattern
+
+### Why This Was Needed
+The API uses the path pattern `/reports/candidate/{id}` but the frontend only had `/report/{id}`, causing 404 errors when accessing URLs with the full API path structure.
+
+---
+
 ## [2025-02-21] - Backend URL Update
 
 ### Changed
