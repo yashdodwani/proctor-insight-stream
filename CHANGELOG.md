@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-02-21] - Repository Cleanup
+
+### Removed
+- AWS CLI installer file (`awscliv2.zip` - 63.69 MB) - was accidentally committed
+- 8 documentation markdown files to reduce repository noise
+  - AWS-SETUP.md
+  - CHECKLIST.md
+  - DEPLOYMENT.md
+  - DEPLOYMENT-SUCCESS.md
+  - IAM-ACCESS-KEY-GUIDE.md
+  - NEXT-STEPS-YOUR-KEY.md
+  - TROUBLESHOOT-404.md
+  - QUICKSTART.md
+
+### Changed
+- Updated `.gitignore` to exclude AWS CLI installer files
+- Simplified README.md to focus on project overview
+- Created single CHANGELOG.md as source of truth for all documentation
+
+### Documentation Structure
+- **README.md** - Project overview, quick start, deployment commands
+- **CHANGELOG.md** - All changes, deployment details, configuration (this file)
+
+---
+
 ## [2025-02-21] - AWS S3 Deployment
 
 ### Added
@@ -66,6 +91,28 @@ dist/
 
 ---
 
-## Future Changes
-Document all codebase changes here with date, description, and affected files.
+## Template for Future Changes
+
+When making changes to the codebase, add new entries at the top using this format:
+
+```markdown
+## [YYYY-MM-DD] - Short Description
+
+### Added
+- New features or files
+
+### Changed
+- Modified features or files
+
+### Fixed
+- Bug fixes
+
+### Removed
+- Deleted features or files
+
+### Files Affected
+- List of modified files
+```
+
+**Keep the most recent changes at the top of this file.**
 
