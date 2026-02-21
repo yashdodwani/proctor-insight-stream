@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-02-21] - API Testing Tools
+
+### Added
+- Created comprehensive API test page (`api-test.html` and `public/api-test.html`)
+- Interactive testing interface for all API endpoints
+- CORS debugging tools
+- Network information display
+- Real-time error reporting
+
+### Testing Features
+- **Test Candidate Reports**: `/reports/candidate/{id}` endpoint
+- **Test Session Reports**: `/reports/report/{session_id}` endpoint
+- **CORS Check**: Verifies CORS headers
+- **Network Info**: Shows connection details
+- **Response Time**: Measures API performance
+- **Error Details**: Shows full error stack traces
+
+### Access Test Page
+```
+http://proctoringreports.s3-website-us-east-1.amazonaws.com/api-test.html
+```
+
+### Current Status
+⚠️ **CORS Issue**: Backend needs to add CORS headers for origin:
+```
+http://proctoringreports.s3-website-us-east-1.amazonaws.com
+```
+
+---
+
 ## [2025-02-21] - Fix Routing for /reports/candidate/:candidateId
 
 ### Fixed
