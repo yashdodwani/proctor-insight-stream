@@ -2,6 +2,75 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2025-02-21] - API Testing Tools
+
+### Added
+- Created comprehensive API test page (`api-test.html` and `public/api-test.html`)
+- Interactive testing interface for all API endpoints
+- CORS debugging tools
+- Network information display
+- Real-time error reporting
+
+### Testing Features
+- **Test Candidate Reports**: `/reports/candidate/{id}` endpoint
+- **Test Session Reports**: `/reports/report/{session_id}` endpoint
+- **CORS Check**: Verifies CORS headers
+- **Network Info**: Shows connection details
+- **Response Time**: Measures API performance
+- **Error Details**: Shows full error stack traces
+
+### Access Test Page
+```
+http://proctoringreports.s3-website-us-east-1.amazonaws.com/api-test.html
+```
+
+### Current Status
+⚠️ **CORS Issue**: Backend needs to add CORS headers for origin:
+```
+http://proctoringreports.s3-website-us-east-1.amazonaws.com
+```
+
+---
+
+## [2025-02-21] - Fix Routing for /reports/candidate/:candidateId
+
+### Fixed
+- Added route `/reports/candidate/:candidateId` to match API URL structure
+- Now both `/report/:candidateId` and `/reports/candidate/:candidateId` work
+
+### Files Affected
+- `src/App.tsx` - Added new route pattern
+
+### Why This Was Needed
+The API uses the path pattern `/reports/candidate/{id}` but the frontend only had `/report/{id}`, causing 404 errors when accessing URLs with the full API path structure.
+
+---
+
+## [2025-02-21] - Backend URL Update
+
+### Changed
+- Updated backend API URL from `https://proctoring-reports-4.onrender.com` to `https://proctoring.formapply.in`
+- Refactored API configuration to use centralized config file
+
+### Added
+- Created `src/config/api.ts` for centralized API endpoint management
+- Added `.env` and `.env.example` files for environment-based configuration
+- Added support for `VITE_API_BASE_URL` environment variable
+
+### Files Affected
+- `src/pages/Report.tsx` - Updated to use API config instead of hardcoded URL
+- `src/config/api.ts` - New API configuration file
+- `.env` - Environment configuration
+- `.env.example` - Environment template for developers
+- `.gitignore` - Added .env files to prevent committing sensitive data
+
+### API Endpoints
+- **Base URL**: `https://proctoring.formapply.in`
+- **Get Report**: `/reports/report/{session_id}`
+- **Get Candidate Reports**: `/reports/candidate/{candidate_id}`
+
+---
+
 ## [2025-02-21] - Repository Cleanup
 
 ### Removed

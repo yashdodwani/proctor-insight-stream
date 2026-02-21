@@ -5,12 +5,14 @@ import { MonitoringCard } from "@/components/MonitoringCard";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { Shield, Eye, Monitor, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { API_ENDPOINTS } from "@/config/api";
 
 interface Violation {
   type: string;
   message: string;
   timestamp: string;
   severity: "critical" | "high" | "medium" | "low";
+  thumbnail?: string; // base64 encoded image
 }
 
 interface MonitoringStatus {
@@ -72,7 +74,7 @@ const Report = () => {
     const fetchReport = async () => {
       try {
         const response = await fetch(
-          `https://proctoring-reports-4.onrender.com/reports/candidate/${candidateId}`
+          API_ENDPOINTS.getCandidateReports(candidateId || '')
         );
         
         if (!response.ok) {
@@ -82,6 +84,9 @@ const Report = () => {
         const data = await response.json();
         if (data.reports && data.reports.length > 0) {
           setReportData(data.reports[0]);
+          // Debug: Log violations to check thumbnail data
+          console.log('Report data:', data.reports[0]);
+          console.log('Violations with thumbnails:', data.reports[0]?.report?.violations?.timeline?.filter((v: Violation) => v.thumbnail));
         } else {
           toast.error("No report found for this candidate");
         }
@@ -147,6 +152,16 @@ const Report = () => {
       month: "2-digit",
       day: "2-digit",
     });
+  };
+
+  const getThumbnailSrc = (thumbnail: string) => {
+    // Check if the thumbnail already has the data URL prefix
+    if (thumbnail.startsWith('data:image')) {
+      return thumbnail;
+    }
+    // Otherwise, add the prefix (try multiple formats)
+    // Most common formats: jpeg, jpg, png, webp
+    return `data:image/jpeg;base64,${thumbnail}`;
   };
 
   return (
@@ -217,12 +232,32 @@ const Report = () => {
                   key={index}
                   className="flex items-start justify-between gap-4 pb-3 border-b last:border-b-0"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium mb-1">
-                      {formatTimestamp(violation.timestamp)} {formatDate(violation.timestamp)}
-                    </div>
-                    <div className="text-sm text-muted-foreground truncate">
-                      {violation.message}
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    {violation.thumbnail ? (
+                      <img
+                        src={getThumbnailSrc(violation.thumbnail)}
+                        alt="Violation snapshot"
+                        className="w-16 h-16 object-cover rounded border border-border flex-shrink-0"
+                        onError={(e) => {
+                          console.error('Failed to load thumbnail:', violation.thumbnail.substring(0, 50));
+                          // Replace with placeholder
+                          const target = e.currentTarget;
+                          target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"%3E%3Crect x="3" y="3" width="18" height="18" rx="2" ry="2"%3E%3C/rect%3E%3Ccircle cx="8.5" cy="8.5" r="1.5"%3E%3C/circle%3E%3Cpolyline points="21 15 16 10 5 21"%3E%3C/polyline%3E%3C/svg%3E';
+                          target.classList.add('opacity-30');
+                        }}
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded border border-border flex-shrink-0 bg-muted flex items-center justify-center opacity-30">
+                        <AlertTriangle className="w-6 h-6" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium mb-1">
+                        {formatTimestamp(violation.timestamp)} {formatDate(violation.timestamp)}
+                      </div>
+                      <div className="text-sm text-muted-foreground truncate">
+                        {violation.message}
+                      </div>
                     </div>
                   </div>
                   <SeverityBadge severity={violation.severity} />
@@ -241,16 +276,46 @@ const Report = () => {
                 key={index}
                 className="flex items-start justify-between gap-4 p-4 bg-accent/30 rounded-lg hover:bg-accent/50 transition-colors"
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-sm font-medium">
-                      {formatTimestamp(violation.timestamp)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {formatDate(violation.timestamp)}
-                    </span>
+                <div className="flex items-start gap-4 flex-1">
+                  {violation.thumbnail ? (
+                    <img
+                      src={getThumbnailSrc(violation.thumbnail)}
+                      alt="Violation snapshot"
+                      className="w-24 h-24 object-cover rounded-lg border border-border flex-shrink-0 shadow-sm hover:scale-105 transition-transform cursor-pointer"
+                      onError={(e) => {
+                        console.error('Failed to load thumbnail:', violation.thumbnail?.substring(0, 50));
+                        // Replace with placeholder
+                        const target = e.currentTarget;
+                        target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"%3E%3Crect x="3" y="3" width="18" height="18" rx="2" ry="2"%3E%3C/rect%3E%3Ccircle cx="8.5" cy="8.5" r="1.5"%3E%3C/circle%3E%3Cpolyline points="21 15 16 10 5 21"%3E%3C/polyline%3E%3C/svg%3E';
+                        target.classList.add('opacity-30');
+                        target.style.cursor = 'default';
+                      }}
+                      onClick={(e) => {
+                        // Only open if image loaded successfully
+                        if (!e.currentTarget.classList.contains('opacity-30')) {
+                          const newWindow = window.open();
+                          if (newWindow) {
+                            newWindow.document.write(`<img src="${getThumbnailSrc(violation.thumbnail)}" alt="Violation snapshot full view" style="max-width:100%; height:auto;" />`);
+                          }
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-lg border border-border flex-shrink-0 bg-muted flex items-center justify-center opacity-30">
+                      <AlertTriangle className="w-8 h-8" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-sm font-medium">
+                        {formatTimestamp(violation.timestamp)}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {formatDate(violation.timestamp)}
+                      </span>
+                    </div>
+                    <p className="text-foreground">{violation.message}</p>
                   </div>
-                  <p className="text-foreground">{violation.message}</p>
                 </div>
                 <SeverityBadge severity={violation.severity} />
               </div>

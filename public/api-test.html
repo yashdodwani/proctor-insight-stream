@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .error { color: #d32f2f; }
+        .success { color: #4CAF50; }
+        .info { color: #1976D2; }
+        pre {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        input {
+            padding: 8px;
+            width: 400px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+        .status.pending { background: #FFF3E0; color: #F57C00; }
+        .status.success { background: #E8F5E9; color: #4CAF50; }
+        .status.error { background: #FFEBEE; color: #d32f2f; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Proctoring API Test Page</h1>
+
+        <div class="test-section">
+            <h2>Configuration</h2>
+            <p><strong>API Base URL:</strong> <code>https://proctoring.formapply.in</code></p>
+            <p><strong>Frontend Origin:</strong> <code id="origin"></code></p>
+        </div>
+
+        <div class="test-section">
+            <h2>Test 1: Get Candidate Reports</h2>
+            <p>Test the <code>/reports/candidate/{id}</code> endpoint</p>
+            <input type="text" id="candidateId" placeholder="Enter Candidate ID" value="24c446c0-4370-4aa7-8dc2-79c5a68a7237">
+            <br>
+            <button onclick="testCandidateReport()">Test Candidate Report API</button>
+            <div id="candidateResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test 2: Get Session Report</h2>
+            <p>Test the <code>/reports/report/{session_id}</code> endpoint</p>
+            <input type="text" id="sessionId" placeholder="Enter Session ID" value="test-session-123">
+            <br>
+            <button onclick="testSessionReport()">Test Session Report API</button>
+            <div id="sessionResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test 3: CORS Preflight Check</h2>
+            <p>Check if the API has proper CORS headers</p>
+            <button onclick="testCORS()">Check CORS Headers</button>
+            <div id="corsResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test 4: Network Info</h2>
+            <button onclick="showNetworkInfo()">Show Network Details</button>
+            <div id="networkInfo"></div>
+        </div>
+    </div>
+
+    <script>
+        // Display current origin
+        document.getElementById('origin').textContent = window.location.origin;
+
+        async function testCandidateReport() {
+            const candidateId = document.getElementById('candidateId').value;
+            const resultDiv = document.getElementById('candidateResult');
+            const apiUrl = `https://proctoring.formapply.in/reports/candidate/${candidateId}`;
+
+            resultDiv.innerHTML = '<p class="status pending">Testing...</p>';
+
+            try {
+                console.log('Fetching:', apiUrl);
+                const startTime = Date.now();
+
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+
+                console.log('Response:', response);
+
+                let result = `
+                    <p class="status ${response.ok ? 'success' : 'error'}">
+                        Status: ${response.status} ${response.statusText}
+                    </p>
+                    <p><strong>Response Time:</strong> ${duration}ms</p>
+                    <p><strong>Headers:</strong></p>
+                    <pre>${JSON.stringify(Object.fromEntries(response.headers), null, 2)}</pre>
+                `;
+
+                if (response.ok) {
+                    const data = await response.json();
+                    result += `
+                        <p class="success"><strong>✅ Success! Data received:</strong></p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    const errorText = await response.text();
+                    result += `
+                        <p class="error"><strong>❌ Error Response:</strong></p>
+                        <pre>${errorText}</pre>
+                    `;
+                }
+
+                resultDiv.innerHTML = result;
+
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `
+                    <p class="status error">❌ Request Failed</p>
+                    <p class="error"><strong>Error Type:</strong> ${error.name}</p>
+                    <p class="error"><strong>Error Message:</strong> ${error.message}</p>
+                    <pre>${error.stack}</pre>
+                    ${error.message.includes('CORS') ? `
+                        <div style="margin-top: 20px; padding: 15px; background: #FFF3E0; border-left: 4px solid #F57C00;">
+                            <h3>🚨 CORS Issue Detected</h3>
+                            <p>The backend API needs to add CORS headers to allow requests from:</p>
+                            <code>${window.location.origin}</code>
+                            <p style="margin-top: 10px;"><strong>Backend needs to add:</strong></p>
+                            <pre>Access-Control-Allow-Origin: ${window.location.origin}
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization</pre>
+                        </div>
+                    ` : ''}
+                `;
+            }
+        }
+
+        async function testSessionReport() {
+            const sessionId = document.getElementById('sessionId').value;
+            const resultDiv = document.getElementById('sessionResult');
+            const apiUrl = `https://proctoring.formapply.in/reports/report/${sessionId}`;
+
+            resultDiv.innerHTML = '<p class="status pending">Testing...</p>';
+
+            try {
+                const response = await fetch(apiUrl);
+
+                let result = `
+                    <p class="status ${response.ok ? 'success' : 'error'}">
+                        Status: ${response.status} ${response.statusText}
+                    </p>
+                `;
+
+                if (response.ok) {
+                    const data = await response.json();
+                    result += `
+                        <p class="success"><strong>✅ Success!</strong></p>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } else {
+                    result += `<p class="error"><strong>❌ Failed</strong></p>`;
+                }
+
+                resultDiv.innerHTML = result;
+
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="status error">❌ ${error.message}</p>
+                `;
+            }
+        }
+
+        async function testCORS() {
+            const resultDiv = document.getElementById('corsResult');
+            resultDiv.innerHTML = '<p class="status pending">Checking CORS...</p>';
+
+            const apiUrl = 'https://proctoring.formapply.in/reports/candidate/test';
+
+            try {
+                // Try to make a request
+                const response = await fetch(apiUrl, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'GET'
+                    }
+                });
+
+                const corsHeader = response.headers.get('Access-Control-Allow-Origin');
+
+                if (corsHeader) {
+                    resultDiv.innerHTML = `
+                        <p class="status success">✅ CORS Enabled</p>
+                        <p><strong>Allowed Origin:</strong> <code>${corsHeader}</code></p>
+                        <p><strong>All Headers:</strong></p>
+                        <pre>${JSON.stringify(Object.fromEntries(response.headers), null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p class="status error">❌ No CORS Headers Found</p>
+                        <p>The API does not have CORS enabled for this origin.</p>
+                        <p><strong>Current Origin:</strong> <code>${window.location.origin}</code></p>
+                        <div style="margin-top: 15px; padding: 15px; background: #FFEBEE;">
+                            <h4>Required Backend Configuration:</h4>
+                            <pre>Access-Control-Allow-Origin: ${window.location.origin}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="status error">❌ CORS Check Failed</p>
+                    <p class="error">${error.message}</p>
+                `;
+            }
+        }
+
+        function showNetworkInfo() {
+            const resultDiv = document.getElementById('networkInfo');
+            resultDiv.innerHTML = `
+                <p><strong>Current URL:</strong> <code>${window.location.href}</code></p>
+                <p><strong>Origin:</strong> <code>${window.location.origin}</code></p>
+                <p><strong>Protocol:</strong> <code>${window.location.protocol}</code></p>
+                <p><strong>Hostname:</strong> <code>${window.location.hostname}</code></p>
+                <p><strong>User Agent:</strong> <code>${navigator.userAgent}</code></p>
+                <p><strong>Online:</strong> ${navigator.onLine ? '✅ Yes' : '❌ No'}</p>
+            `;
+        }
+
+        // Auto-show network info on load
+        window.onload = () => {
+            showNetworkInfo();
+        };
+    </script>
+</body>
+</html>
+
