@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# AWS credentials (never commit these!)
+.aws/
+aws-credentials.json
+*-credentials.json
+

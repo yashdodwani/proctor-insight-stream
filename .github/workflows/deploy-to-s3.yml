@@ -1,0 +1,54 @@
+name: Deploy to S3 + CloudFront
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to S3
+        env:
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+        run: |
+          # Ensure the build output directory matches your Vite config (default: dist)
+          BUILD_DIR=dist
+          if [ ! -d "$BUILD_DIR" ]; then
+            echo "Build directory '$BUILD_DIR' not found"
+            exit 1
+          fi
+
+          # Sync build to S3 (no --acl flag as bucket has ACLs disabled)
+          aws s3 sync "$BUILD_DIR" "s3://$S3_BUCKET" --delete
+
+      - name: Invalidate CloudFront (optional)
+        if: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID != '' }}
+        env:
+          CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"
+
