@@ -1,86 +1,93 @@
-# Welcome to your Lovable project
+# Proctor Insight Stream
 
-## Project info
+A real-time monitoring and reporting dashboard for proctoring insights.
 
-**URL**: https://lovable.dev/projects/68d86024-a6a1-4271-bc3d-c93ec1c59246
+## 🚀 Live Demo
 
-## How can I edit this code?
+**Production**: http://proctoringreports.s3-website-us-east-1.amazonaws.com
 
-**Use Lovable**
+## 📋 Quick Start
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/68d86024-a6a1-4273-c93ec1c59246) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+### Development
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Install dependencies
+npm install
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Production Build
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```sh
+# Build for production
+npm run build
 
-**Use GitHub Codespaces**
+# Deploy to AWS S3
+./deploy.sh
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right of the repository.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🛠️ Tech Stack
 
-## What technologies are used for this project?
+- **Framework**: React 18 with TypeScript
+- **Build Tool**: Vite 5.4.19
+- **UI Components**: shadcn/ui
+- **Styling**: Tailwind CSS
+- **Deployment**: AWS S3 + GitHub Actions
 
-This project is built with:
+## 🌐 Deployment
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Manual Deployment
 
-## How can I deploy this project?
+```sh
+# Configure S3 bucket (one-time setup)
+./setup-s3.sh
 
-I added a GitHub Actions workflow to deploy the built app to an S3 bucket and optionally invalidate a CloudFront distribution: `.github/workflows/deploy-to-s3.yml`.
+# Deploy to S3
+./deploy.sh
+```
 
-Quick setup steps:
+### Automatic Deployment (GitHub Actions)
 
-1. Create an S3 bucket and (optionally) a CloudFront distribution for the bucket.
-2. In your repository settings -> Secrets -> Actions, add the following secrets:
-   - `AWS_ACCESS_KEY_ID` — an IAM user access key with permissions to S3 (+ CloudFront if used)
-   - `AWS_SECRET_ACCESS_KEY` — the IAM secret key
-   - `AWS_REGION` — e.g. `us-east-1`
-   - `S3_BUCKET` — the target S3 bucket name
-   - `CLOUDFRONT_DISTRIBUTION_ID` — (optional) CloudFront distribution id to invalidate after deploy
-3. Push to the `main` branch to trigger the workflow, or run it manually via Actions -> workflow -> Run workflow.
+Push to `main` branch triggers automatic deployment to AWS S3.
 
-Security note
+**Required GitHub Secrets:**
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION` (us-east-1)
+- `S3_BUCKET` (proctoringreports)
 
-- Never paste real AWS credentials into public chat messages, issue trackers, or commit them into the repository. The repository and chat logs may be visible to others.
-- Use GitHub Secrets, environment variables, or a secrets manager to store credentials.
+See `.github/workflows/deploy-to-s3.yml` for workflow details.
 
-## Can I connect a custom domain to my Lovable project?
+## 📝 Documentation
 
-Yes, you can!
+- **CHANGELOG.md** - All project changes and deployment configuration
+- Deployment scripts: `deploy.sh`, `setup-s3.sh`, `fix-404.sh`
+- AWS configurations: `bucket-policy.json`, `iam-policy.json`
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 📂 Project Structure
+
+```
+src/
+  ├── components/     # React components
+  ├── pages/         # Page components
+  ├── hooks/         # Custom hooks
+  └── lib/           # Utilities
+
+public/            # Static assets
+dist/              # Production build
+```
+
+## 🔧 Available Scripts
+
+```sh
+npm run dev        # Start development server
+npm run build      # Build for production
+npm run preview    # Preview production build
+npm run lint       # Run ESLint
+```
+
+---
+
+**For detailed deployment information and all changes, see [CHANGELOG.md](./CHANGELOG.md)**
