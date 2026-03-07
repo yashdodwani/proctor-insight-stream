@@ -8,6 +8,18 @@ A real-time monitoring and reporting dashboard for proctoring insights.
 
 ## 📋 Quick Start
 
+### Environment Setup
+
+1. Copy the environment template:
+```sh
+cp .env.example .env
+```
+
+2. Update `.env` with your configuration:
+```env
+VITE_API_BASE_URL=https://proctoring.formapply.in
+```
+
 ### Development
 
 ```sh

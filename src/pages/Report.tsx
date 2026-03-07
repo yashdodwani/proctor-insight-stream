@@ -5,12 +5,14 @@ import { MonitoringCard } from "@/components/MonitoringCard";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { Shield, Eye, Monitor, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { API_ENDPOINTS } from "@/config/api";
 
 interface Violation {
   type: string;
   message: string;
   timestamp: string;
   severity: "critical" | "high" | "medium" | "low";
+  thumbnail?: string; // base64 encoded image
 }
 
 interface MonitoringStatus {
@@ -67,27 +69,50 @@ const Report = () => {
   const { candidateId } = useParams();
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchReport = async () => {
       try {
         const response = await fetch(
-          `https://proctoring-reports-4.onrender.com/reports/candidate/${candidateId}`
+          API_ENDPOINTS.getCandidateReports(candidateId || '')
         );
         
         if (!response.ok) {
-          throw new Error("Failed to fetch report");
+          let errorMessage = "Failed to fetch report";
+          try {
+            const errData = await response.json();
+            if (errData?.detail) errorMessage = errData.detail;
+          } catch (_) { /* ignore JSON parse errors */ }
+
+          if (response.status === 503) {
+            setErrorStatus(503);
+            setErrorDetail(errorMessage);
+            toast.error(`Service unavailable: ${errorMessage}. The reporting database may be temporarily down. Please try again later.`);
+          } else if (response.status === 404) {
+            setErrorStatus(404);
+            setErrorDetail("No report found for this candidate ID.");
+            toast.error("No report found for this candidate ID.");
+          } else {
+            setErrorStatus(response.status);
+            setErrorDetail(errorMessage);
+            toast.error(`Error ${response.status}: ${errorMessage}`);
+          }
+          return;
         }
 
         const data = await response.json();
         if (data.reports && data.reports.length > 0) {
           setReportData(data.reports[0]);
+          console.log('Report data:', data.reports[0]);
+          console.log('Violations with thumbnails:', data.reports[0]?.report?.violations?.timeline?.filter((v: Violation) => v.thumbnail));
         } else {
           toast.error("No report found for this candidate");
         }
       } catch (error) {
         console.error("Error fetching report:", error);
-        toast.error("Failed to load report data");
+        toast.error("Failed to load report data. Check your network connection.");
       } finally {
         setLoading(false);
       }
@@ -110,14 +135,33 @@ const Report = () => {
   }
 
   if (!reportData) {
+    const is503 = errorStatus === 503;
+    const is404 = errorStatus === 404;
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="p-8 text-center">
-          <AlertTriangle className="w-16 h-16 text-warning mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Report Not Found</h2>
-          <p className="text-muted-foreground">
-            No proctoring report available for this candidate.
+        <Card className="p-8 text-center max-w-md">
+          <AlertTriangle className={`w-16 h-16 mx-auto mb-4 ${is503 ? "text-critical" : "text-warning"}`} />
+          <h2 className="text-2xl font-bold mb-2">
+            {is503 ? "Service Unavailable" : is404 ? "Report Not Found" : "Error Loading Report"}
+          </h2>
+          <p className="text-muted-foreground mb-4">
+            {is503
+              ? "The proctoring reports database is currently unavailable. Please try again in a few minutes."
+              : is404
+              ? "No proctoring report available for this candidate ID."
+              : errorDetail || "An unexpected error occurred. Please try again."}
           </p>
+          {errorStatus && (
+            <p className="text-xs text-muted-foreground font-mono">
+              HTTP {errorStatus} — {errorDetail}
+            </p>
+          )}
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 text-sm"
+          >
+            Retry
+          </button>
         </Card>
       </div>
     );
@@ -147,6 +191,16 @@ const Report = () => {
       month: "2-digit",
       day: "2-digit",
     });
+  };
+
+  const getThumbnailSrc = (thumbnail: string) => {
+    // Check if the thumbnail already has the data URL prefix
+    if (thumbnail.startsWith('data:image')) {
+      return thumbnail;
+    }
+    // Otherwise, add the prefix (try multiple formats)
+    // Most common formats: jpeg, jpg, png, webp
+    return `data:image/jpeg;base64,${thumbnail}`;
   };
 
   return (
@@ -217,12 +271,32 @@ const Report = () => {
                   key={index}
                   className="flex items-start justify-between gap-4 pb-3 border-b last:border-b-0"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium mb-1">
-                      {formatTimestamp(violation.timestamp)} {formatDate(violation.timestamp)}
-                    </div>
-                    <div className="text-sm text-muted-foreground truncate">
-                      {violation.message}
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    {violation.thumbnail ? (
+                      <img
+                        src={getThumbnailSrc(violation.thumbnail)}
+                        alt="Violation snapshot"
+                        className="w-16 h-16 object-cover rounded border border-border flex-shrink-0"
+                        onError={(e) => {
+                          console.error('Failed to load thumbnail:', violation.thumbnail.substring(0, 50));
+                          // Replace with placeholder
+                          const target = e.currentTarget;
+                          target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"%3E%3Crect x="3" y="3" width="18" height="18" rx="2" ry="2"%3E%3C/rect%3E%3Ccircle cx="8.5" cy="8.5" r="1.5"%3E%3C/circle%3E%3Cpolyline points="21 15 16 10 5 21"%3E%3C/polyline%3E%3C/svg%3E';
+                          target.classList.add('opacity-30');
+                        }}
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded border border-border flex-shrink-0 bg-muted flex items-center justify-center opacity-30">
+                        <AlertTriangle className="w-6 h-6" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium mb-1">
+                        {formatTimestamp(violation.timestamp)} {formatDate(violation.timestamp)}
+                      </div>
+                      <div className="text-sm text-muted-foreground truncate">
+                        {violation.message}
+                      </div>
                     </div>
                   </div>
                   <SeverityBadge severity={violation.severity} />
@@ -241,16 +315,46 @@ const Report = () => {
                 key={index}
                 className="flex items-start justify-between gap-4 p-4 bg-accent/30 rounded-lg hover:bg-accent/50 transition-colors"
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-sm font-medium">
-                      {formatTimestamp(violation.timestamp)}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      {formatDate(violation.timestamp)}
-                    </span>
+                <div className="flex items-start gap-4 flex-1">
+                  {violation.thumbnail ? (
+                    <img
+                      src={getThumbnailSrc(violation.thumbnail)}
+                      alt="Violation snapshot"
+                      className="w-24 h-24 object-cover rounded-lg border border-border flex-shrink-0 shadow-sm hover:scale-105 transition-transform cursor-pointer"
+                      onError={(e) => {
+                        console.error('Failed to load thumbnail:', violation.thumbnail?.substring(0, 50));
+                        // Replace with placeholder
+                        const target = e.currentTarget;
+                        target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"%3E%3Crect x="3" y="3" width="18" height="18" rx="2" ry="2"%3E%3C/rect%3E%3Ccircle cx="8.5" cy="8.5" r="1.5"%3E%3C/circle%3E%3Cpolyline points="21 15 16 10 5 21"%3E%3C/polyline%3E%3C/svg%3E';
+                        target.classList.add('opacity-30');
+                        target.style.cursor = 'default';
+                      }}
+                      onClick={(e) => {
+                        // Only open if image loaded successfully
+                        if (!e.currentTarget.classList.contains('opacity-30')) {
+                          const newWindow = window.open();
+                          if (newWindow) {
+                            newWindow.document.write(`<img src="${getThumbnailSrc(violation.thumbnail)}" alt="Violation snapshot full view" style="max-width:100%; height:auto;" />`);
+                          }
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div className="w-24 h-24 rounded-lg border border-border flex-shrink-0 bg-muted flex items-center justify-center opacity-30">
+                      <AlertTriangle className="w-8 h-8" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-sm font-medium">
+                        {formatTimestamp(violation.timestamp)}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {formatDate(violation.timestamp)}
+                      </span>
+                    </div>
+                    <p className="text-foreground">{violation.message}</p>
                   </div>
-                  <p className="text-foreground">{violation.message}</p>
                 </div>
                 <SeverityBadge severity={violation.severity} />
               </div>
