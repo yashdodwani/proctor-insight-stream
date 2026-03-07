@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-03-07] - Fix S3 Routing & API Fetch from Frontend
+
+### Problem
+- Direct URL access to `http://proctoringreports.s3-website-us-east-1.amazonaws.com/reports/candidate/{id}`
+  returned 503/404 because `HashRouter` requires a `#` in the URL — path-based deep links weren't routed to the React app.
+- CORS errors in development when calling `https://proctoring.formapply.in` from localhost.
+
+### Fixed
+- **Switched `HashRouter` → `BrowserRouter`** (`src/App.tsx`)
+  - S3 is already configured with `--error-document index.html`, so all unknown paths serve `index.html`.
+  - `BrowserRouter` lets React Router match `/reports/candidate/{id}` directly without needing `#` in the URL.
+- **Added Vite dev-server proxy** (`vite.config.ts`)
+  - All `/reports/*` requests are proxied to `https://proctoring.formapply.in` during `npm run dev`.
+  - Eliminates CORS errors in local development.
+- **Updated API config** (`src/config/api.ts`)
+  - In development (`import.meta.env.DEV`), relative URLs are used so the Vite proxy handles the request.
+  - In production, the full backend URL is used.
+
+### Files Changed
+- `src/App.tsx` — `HashRouter` → `BrowserRouter`
+- `vite.config.ts` — Added `server.proxy` for `/reports`
+- `src/config/api.ts` — Dev uses relative URLs, prod uses absolute
+- `CORS-ISSUE.md` — Documented CORS requirements for production backend
+
+### Production Note
+The backend at `https://proctoring.formapply.in` must allow CORS from:
+```
+http://proctoringreports.s3-website-us-east-1.amazonaws.com
+```
+See `CORS-ISSUE.md` for details.
+
+---
+
 ## [2025-02-21] - API Testing Tools
 
 ### Added

@@ -69,6 +69,8 @@ const Report = () => {
   const { candidateId } = useParams();
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchReport = async () => {
@@ -78,13 +80,31 @@ const Report = () => {
         );
         
         if (!response.ok) {
-          throw new Error("Failed to fetch report");
+          let errorMessage = "Failed to fetch report";
+          try {
+            const errData = await response.json();
+            if (errData?.detail) errorMessage = errData.detail;
+          } catch (_) { /* ignore JSON parse errors */ }
+
+          if (response.status === 503) {
+            setErrorStatus(503);
+            setErrorDetail(errorMessage);
+            toast.error(`Service unavailable: ${errorMessage}. The reporting database may be temporarily down. Please try again later.`);
+          } else if (response.status === 404) {
+            setErrorStatus(404);
+            setErrorDetail("No report found for this candidate ID.");
+            toast.error("No report found for this candidate ID.");
+          } else {
+            setErrorStatus(response.status);
+            setErrorDetail(errorMessage);
+            toast.error(`Error ${response.status}: ${errorMessage}`);
+          }
+          return;
         }
 
         const data = await response.json();
         if (data.reports && data.reports.length > 0) {
           setReportData(data.reports[0]);
-          // Debug: Log violations to check thumbnail data
           console.log('Report data:', data.reports[0]);
           console.log('Violations with thumbnails:', data.reports[0]?.report?.violations?.timeline?.filter((v: Violation) => v.thumbnail));
         } else {
@@ -92,7 +112,7 @@ const Report = () => {
         }
       } catch (error) {
         console.error("Error fetching report:", error);
-        toast.error("Failed to load report data");
+        toast.error("Failed to load report data. Check your network connection.");
       } finally {
         setLoading(false);
       }
@@ -115,14 +135,33 @@ const Report = () => {
   }
 
   if (!reportData) {
+    const is503 = errorStatus === 503;
+    const is404 = errorStatus === 404;
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="p-8 text-center">
-          <AlertTriangle className="w-16 h-16 text-warning mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Report Not Found</h2>
-          <p className="text-muted-foreground">
-            No proctoring report available for this candidate.
+        <Card className="p-8 text-center max-w-md">
+          <AlertTriangle className={`w-16 h-16 mx-auto mb-4 ${is503 ? "text-critical" : "text-warning"}`} />
+          <h2 className="text-2xl font-bold mb-2">
+            {is503 ? "Service Unavailable" : is404 ? "Report Not Found" : "Error Loading Report"}
+          </h2>
+          <p className="text-muted-foreground mb-4">
+            {is503
+              ? "The proctoring reports database is currently unavailable. Please try again in a few minutes."
+              : is404
+              ? "No proctoring report available for this candidate ID."
+              : errorDetail || "An unexpected error occurred. Please try again."}
           </p>
+          {errorStatus && (
+            <p className="text-xs text-muted-foreground font-mono">
+              HTTP {errorStatus} — {errorDetail}
+            </p>
+          )}
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 text-sm"
+          >
+            Retry
+          </button>
         </Card>
       </div>
     );
