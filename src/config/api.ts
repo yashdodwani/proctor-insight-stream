@@ -13,5 +13,11 @@ export const API_ENDPOINTS = {
   getCandidateReports: (candidateId: string) => `${BASE}/reports/candidate/${candidateId}`,
 } as const;
 
+/** Shared headers for every API request. */
+export const API_HEADERS: Record<string, string> = {
+  'Content-Type': 'application/json',
+  'X-API-Key': import.meta.env.VITE_API_KEY ?? '',
+};
+
 export { API_BASE_URL };
 

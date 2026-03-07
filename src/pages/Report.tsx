@@ -5,7 +5,7 @@ import { MonitoringCard } from "@/components/MonitoringCard";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { Shield, Eye, Monitor, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { API_ENDPOINTS } from "@/config/api";
+import { API_ENDPOINTS, API_HEADERS } from "@/config/api";
 
 interface Violation {
   type: string;
@@ -76,7 +76,8 @@ const Report = () => {
     const fetchReport = async () => {
       try {
         const response = await fetch(
-          API_ENDPOINTS.getCandidateReports(candidateId || '')
+          API_ENDPOINTS.getCandidateReports(candidateId || ''),
+          { headers: API_HEADERS }
         );
         
         if (!response.ok) {
@@ -86,7 +87,11 @@ const Report = () => {
             if (errData?.detail) errorMessage = errData.detail;
           } catch (_) { /* ignore JSON parse errors */ }
 
-          if (response.status === 503) {
+          if (response.status === 403) {
+            setErrorStatus(403);
+            setErrorDetail("Invalid or missing API key.");
+            toast.error("Access denied: invalid or missing API key.");
+          } else if (response.status === 503) {
             setErrorStatus(503);
             setErrorDetail(errorMessage);
             toast.error(`Service unavailable: ${errorMessage}. The reporting database may be temporarily down. Please try again later.`);
@@ -137,18 +142,21 @@ const Report = () => {
   if (!reportData) {
     const is503 = errorStatus === 503;
     const is404 = errorStatus === 404;
+    const is403 = errorStatus === 403;
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="p-8 text-center max-w-md">
           <AlertTriangle className={`w-16 h-16 mx-auto mb-4 ${is503 ? "text-critical" : "text-warning"}`} />
           <h2 className="text-2xl font-bold mb-2">
-            {is503 ? "Service Unavailable" : is404 ? "Report Not Found" : "Error Loading Report"}
+            {is503 ? "Service Unavailable" : is404 ? "Report Not Found" : is403 ? "Access Denied" : "Error Loading Report"}
           </h2>
           <p className="text-muted-foreground mb-4">
             {is503
               ? "The proctoring reports database is currently unavailable. Please try again in a few minutes."
               : is404
               ? "No proctoring report available for this candidate ID."
+              : is403
+              ? "Invalid or missing API key. Please verify the VITE_API_KEY environment variable is set correctly."
               : errorDetail || "An unexpected error occurred. Please try again."}
           </p>
           {errorStatus && (
