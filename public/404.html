@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Redirecting...</title>
+  <script>
+    // S3 static hosting serves this file for any path that doesn't exist as a file.
+    // We rewrite the path into a hash-based URL so HashRouter picks it up correctly.
+    //
+    // Examples of what the backend might redirect to:
+    //   /{candidateId}                           → /#/report/{candidateId}
+    //   /report/{candidateId}                    → /#/report/{candidateId}
+    //   /reports/candidate/{candidateId}         → /#/report/{candidateId}
+    //   /{candidateId}#/report/{candidateId}     → already has hash, just load index
+
+    (function () {
+      var path = window.location.pathname; // e.g. "/8e3c5bc2-..." or "/report/8e3c5bc2-..."
+      var search = window.location.search;  // e.g. "?foo=bar"
+      var origin = window.location.origin;
+
+      // Strip leading slash
+      var stripped = path.replace(/^\//, '');
+
+      var hashPath;
+
+      if (!stripped || stripped === 'index.html') {
+        // Root — just go home
+        hashPath = '/';
+      } else if (/^reports\/candidate\//.test(stripped)) {
+        // /reports/candidate/{id}
+        var id = stripped.replace('reports/candidate/', '');
+        hashPath = '/report/' + id;
+      } else if (/^report\//.test(stripped)) {
+        // /report/{id}
+        hashPath = '/' + stripped;
+      } else {
+        // Bare /{candidateId} — treat the whole path segment as the candidate ID
+        hashPath = '/report/' + stripped;
+      }
+
+      // Redirect to index.html#/report/{id}
+      window.location.replace(origin + '/#' + hashPath + search);
+    })();
+  </script>
+</head>
+<body>
+  <p>Redirecting to report...</p>
+</body>
+</html>
+

@@ -5,7 +5,7 @@ import { MonitoringCard } from "@/components/MonitoringCard";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { Shield, Eye, Monitor, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import { API_ENDPOINTS, API_HEADERS } from "@/config/api";
+import { API_ENDPOINTS, getApiHeaders } from "@/config/api";
 
 interface Violation {
   type: string;
@@ -77,7 +77,7 @@ const Report = () => {
       try {
         const response = await fetch(
           API_ENDPOINTS.getCandidateReports(candidateId || ''),
-          { headers: API_HEADERS }
+          { headers: getApiHeaders() }
         );
         
         if (!response.ok) {
@@ -190,6 +190,7 @@ const Report = () => {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
+      timeZone: "Asia/Kolkata",
     });
   };
 
@@ -198,6 +199,7 @@ const Report = () => {
     return date.toLocaleDateString("en-US", {
       month: "2-digit",
       day: "2-digit",
+      timeZone: "Asia/Kolkata",
     });
   };
 

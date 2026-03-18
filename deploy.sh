@@ -36,6 +36,17 @@ echo ""
 
 # Build the application
 echo "📦 Building application..."
+
+# Load .env so Vite can inline VITE_* vars into the production bundle
+if [ -f ".env" ]; then
+  # Export only VITE_* variables (safe to expose — they end up in the JS bundle anyway)
+  set -a
+  # shellcheck disable=SC1091
+  source <(grep '^VITE_' .env)
+  set +a
+  echo "✅ Loaded VITE_* vars from .env"
+fi
+
 npm run build
 
 if [ ! -d "$BUILD_DIR" ]; then
@@ -60,6 +71,14 @@ echo ""
 echo "☁️  Deploying to S3 bucket: $BUCKET_NAME..."
 # Note: No --acl flag because bucket has ACLs disabled (uses bucket policy for public access)
 aws s3 sync "$BUILD_DIR/" "s3://$BUCKET_NAME" --delete
+
+# Configure S3 website: index.html for root, 404.html as error doc so any
+# non-hash URL (e.g. /{candidateId} from the backend redirect) gets caught
+# by 404.html which rewrites it into the correct /#/report/{candidateId} hash URL.
+echo "⚙️  Configuring S3 website routing..."
+aws s3 website "s3://$BUCKET_NAME" \
+  --index-document index.html \
+  --error-document 404.html
 
 echo ""
 echo "🔍 Verifying deployment..."

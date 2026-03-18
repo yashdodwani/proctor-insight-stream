@@ -14,6 +14,12 @@ export default defineConfig(({ mode }) => ({
         target: 'https://proctoring.formapply.in',
         changeOrigin: true,
         secure: true,
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            // Ensure the API key is always forwarded even if the browser strips it
+            proxyReq.setHeader('X-API-Key', process.env.VITE_API_KEY || 'proctoringv0@yash');
+          });
+        },
       },
     },
   },

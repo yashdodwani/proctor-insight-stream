@@ -13,11 +13,19 @@ export const API_ENDPOINTS = {
   getCandidateReports: (candidateId: string) => `${BASE}/reports/candidate/${candidateId}`,
 } as const;
 
-/** Shared headers for every API request. */
-export const API_HEADERS: Record<string, string> = {
-  'Content-Type': 'application/json',
-  'X-API-Key': import.meta.env.VITE_API_KEY ?? '',
+/**
+ * Returns headers for every API request.
+ * Evaluated lazily so the env var value is always current (important for
+ * production builds where Vite inlines the value at bundle time).
+ */
+const API_KEY = import.meta.env.VITE_API_KEY || 'proctoringv0@yash';
+
+export const getApiHeaders = (): Record<string, string> => {
+  return {
+    'X-API-Key': API_KEY,
+  };
 };
+
 
 export { API_BASE_URL };
 
