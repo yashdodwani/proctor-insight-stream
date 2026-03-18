@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { MonitoringCard } from "@/components/MonitoringCard";
 import { SeverityBadge } from "@/components/SeverityBadge";
-import { Shield, Eye, Monitor, AlertTriangle } from "lucide-react";
+import { Shield, Eye, Monitor, AlertTriangle, Download } from "lucide-react";
 import { toast } from "sonner";
 import { API_ENDPOINTS, getApiHeaders } from "@/config/api";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 interface Violation {
   type: string;
@@ -70,6 +72,8 @@ const Report = () => {
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   useEffect(() => {
@@ -222,14 +226,70 @@ const Report = () => {
     return `data:image/jpeg;base64,${thumbnail}`;
   };
 
+  const downloadPDF = async () => {
+    if (!reportRef.current) return;
+    setDownloading(true);
+    toast.info("Generating PDF, please wait...");
+
+    try {
+      const element = reportRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = pdfWidth / imgWidth;
+      const scaledHeight = imgHeight * ratio;
+      let heightLeft = scaledHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, scaledHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position -= pdfHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, scaledHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      pdf.save(`proctoring-report-${candidateId}.pdf`);
+      toast.success("PDF downloaded successfully!");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate PDF. Please try again.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto" ref={reportRef}>
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Shield className="w-8 h-8 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">Proctoring & Compliance</h1>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 mb-2">
+              <Shield className="w-8 h-8 text-primary" />
+              <h1 className="text-3xl font-bold text-foreground">Proctoring & Compliance</h1>
+            </div>
+            <button
+              onClick={downloadPDF}
+              disabled={downloading}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed no-print"
+            >
+              <Download className="w-4 h-4" />
+              {downloading ? "Generating..." : "Download PDF"}
+            </button>
           </div>
           <p className="text-muted-foreground">
             Candidate ID: <span className="font-mono">{candidateId}</span>
