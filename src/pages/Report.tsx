@@ -79,7 +79,7 @@ const Report = () => {
           API_ENDPOINTS.getCandidateReports(candidateId || ''),
           { headers: getApiHeaders() }
         );
-        
+
         if (!response.ok) {
           let errorMessage = "Failed to fetch report";
           try {
@@ -154,10 +154,10 @@ const Report = () => {
             {is503
               ? "The proctoring reports database is currently unavailable. Please try again in a few minutes."
               : is404
-              ? "No proctoring report available for this candidate ID."
-              : is403
-              ? "Invalid or missing API key. Please verify the VITE_API_KEY environment variable is set correctly."
-              : errorDetail || "An unexpected error occurred. Please try again."}
+                ? "No proctoring report available for this candidate ID."
+                : is403
+                  ? "Invalid or missing API key. Please verify the VITE_API_KEY environment variable is set correctly."
+                  : errorDetail || "An unexpected error occurred. Please try again."}
           </p>
           {errorStatus && (
             <p className="text-xs text-muted-foreground font-mono">
@@ -184,8 +184,17 @@ const Report = () => {
     return "text-critical";
   };
 
+  const ensureUTC = (timestamp: string) => {
+    // Backend sends UTC timestamps without 'Z' suffix, so JS parses them as local time.
+    // Append 'Z' to force UTC interpretation.
+    if (!timestamp.endsWith("Z") && !timestamp.includes("+") && !timestamp.includes("-", 10)) {
+      return timestamp + "Z";
+    }
+    return timestamp;
+  };
+
   const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
+    const date = new Date(ensureUTC(timestamp));
     return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
@@ -195,7 +204,7 @@ const Report = () => {
   };
 
   const formatDate = (timestamp: string) => {
-    const date = new Date(timestamp);
+    const date = new Date(ensureUTC(timestamp));
     return date.toLocaleDateString("en-US", {
       month: "2-digit",
       day: "2-digit",
