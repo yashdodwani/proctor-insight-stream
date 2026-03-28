@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { MonitoringCard } from "@/components/MonitoringCard";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { Shield, Eye, Monitor, AlertTriangle, Download } from "lucide-react";
 import { toast } from "sonner";
-import { API_ENDPOINTS, getApiHeaders } from "@/config/api";
+import { API_BASE_URL, API_ENDPOINTS, getApiHeaders } from "@/config/api";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -76,18 +76,62 @@ const Report = () => {
   const reportRef = useRef<HTMLDivElement>(null);
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
+  const getCandidateReportUrls = useCallback((id: string): string[] => {
+    const primary = API_ENDPOINTS.getCandidateReports(id);
+    if (!import.meta.env.DEV) return [primary];
+
+    const direct = `${API_BASE_URL}/reports/candidate/${id}`;
+    const proxied = `/reports/candidate/${id}`;
+    const fallback = primary.startsWith("http") ? proxied : direct;
+    return [primary, fallback].filter((url, idx, arr) => arr.indexOf(url) === idx);
+  }, []);
+
+  const fetchCandidateReportWithFallback = useCallback(async (id: string): Promise<{ response: Response; url: string }> => {
+    const urls = getCandidateReportUrls(id);
+
+    for (let attempt = 0; attempt < urls.length; attempt += 1) {
+      const url = urls[attempt];
+      try {
+        const response = await fetch(url, { headers: getApiHeaders() });
+
+        if (response.ok) {
+          return { response, url };
+        }
+
+        const canRetryInDev = import.meta.env.DEV && attempt < urls.length - 1;
+        const isHTML = response.headers.get("content-type")?.includes("text/html");
+        const isLikelyTransportProxyError = response.status >= 500 || (response.status === 404 && isHTML);
+        if (canRetryInDev && isLikelyTransportProxyError) {
+          console.warn(`Report fetch failed on ${url} with HTTP ${response.status}${isHTML ? " (HTML response)" : ""}, retrying alternate URL...`);
+          continue;
+        }
+
+        return { response, url };
+      } catch (error) {
+        const canRetryInDev = import.meta.env.DEV && attempt < urls.length - 1;
+        if (canRetryInDev) {
+          console.warn(`Report fetch network error on ${url}, retrying alternate URL...`, error);
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    throw new Error("Failed to fetch report from all candidate report URLs");
+  }, [getCandidateReportUrls]);
+
   useEffect(() => {
     const fetchReport = async () => {
       try {
-        const response = await fetch(
-          API_ENDPOINTS.getCandidateReports(candidateId || ''),
-          { headers: getApiHeaders() }
-        );
+        const candidate = candidateId || "";
+        const { response, url } = await fetchCandidateReportWithFallback(candidate);
 
         if (!response.ok) {
           let errorMessage = "Failed to fetch report";
           try {
-            const errData = await response.json();
+            const contentType = response.headers.get("content-type");
+            const isJSON = contentType?.includes("application/json");
+            const errData = isJSON ? await response.json() : {};
             if (errData?.detail) errorMessage = errData.detail;
           } catch (_) { /* ignore JSON parse errors */ }
 
@@ -105,7 +149,7 @@ const Report = () => {
             toast.error("No report found for this candidate ID.");
           } else {
             setErrorStatus(response.status);
-            setErrorDetail(errorMessage);
+            setErrorDetail(`${errorMessage} (URL: ${url})`);
             toast.error(`Error ${response.status}: ${errorMessage}`);
           }
           return;
@@ -121,6 +165,9 @@ const Report = () => {
         }
       } catch (error) {
         console.error("Error fetching report:", error);
+        setErrorStatus(null);
+        const urls = getCandidateReportUrls(candidateId || "");
+        setErrorDetail(`Network/DNS error. Tried: ${urls.join(" | ")}`);
         toast.error("Failed to load report data. Check your network connection.");
       } finally {
         setLoading(false);
@@ -130,7 +177,7 @@ const Report = () => {
     if (candidateId) {
       fetchReport();
     }
-  }, [candidateId]);
+  }, [candidateId, fetchCandidateReportWithFallback, getCandidateReportUrls]);
 
   if (loading) {
     return (

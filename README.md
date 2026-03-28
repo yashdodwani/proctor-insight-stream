@@ -17,8 +17,28 @@ cp .env.example .env
 
 2. Update `.env` with your configuration:
 ```env
-VITE_API_BASE_URL=https://proctoring.formapply.in
+# For local backend development (e.g., uvicorn on port 8001):
+VITE_API_BASE_URL=http://127.0.0.1:8001
+VITE_API_KEY=your_api_key_here
+# Enable Vite proxy for local backend:
+VITE_USE_DEV_PROXY=false
 ```
+
+For production backend:
+```env
+VITE_API_BASE_URL=https://proctoring.formapply.in
+VITE_API_KEY=your_production_key
+VITE_USE_DEV_PROXY=false
+```
+
+**Backend Setup:**
+- **Local**: Run `uvicorn main:app --reload --port 8001` in your Python backend
+- **Production**: Backend is at `https://proctoring.formapply.in`
+
+**Vite Proxy:**
+- Set `VITE_USE_DEV_PROXY=true` when local Vite proxy should forward to backend
+- Set `VITE_USE_DEV_PROXY=false` for direct browser calls to backend (works if no DNS issues)
+- The proxy automatically includes `X-API-Key` header on all `/reports` requests
 
 ### Development
 
