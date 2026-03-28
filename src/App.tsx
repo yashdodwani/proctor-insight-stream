@@ -6,7 +6,6 @@ import { HashRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Report from "./pages/Report";
 import NotFound from "./pages/NotFound";
-import Register from "./pages/Register";
 
 const queryClient = new QueryClient();
 
@@ -19,7 +18,6 @@ const App = () => (
       <HashRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/register" element={<Register />} />
           <Route path="/report/:candidateId" element={<Report />} />
           <Route path="/reports/candidate/:candidateId" element={<Report />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

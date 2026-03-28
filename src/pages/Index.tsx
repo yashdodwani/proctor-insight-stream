@@ -10,10 +10,6 @@ const Index = () => {
     navigate("/report/04c2ab25-f62a-46a6-a047-f704007fd4e4");
   };
 
-  const handleRegister = () => {
-    navigate("/register");
-  };
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="text-center max-w-2xl px-4">
@@ -24,14 +20,9 @@ const Index = () => {
         <p className="text-xl text-muted-foreground mb-8">
           View detailed exam compliance and monitoring reports
         </p>
-        <div className="flex gap-4 justify-center">
-          <Button onClick={handleRegister} size="lg" variant="default">
-            Register Candidate
-          </Button>
-          <Button onClick={handleViewReport} size="lg" variant="outline">
-            View Sample Report
-          </Button>
-        </div>
+        <Button onClick={handleViewReport} size="lg">
+          View Sample Report
+        </Button>
         <p className="mt-6 text-sm text-muted-foreground">
           In your main app, redirect to: <br />
           <code className="text-xs bg-muted px-2 py-1 rounded mt-2 inline-block">
