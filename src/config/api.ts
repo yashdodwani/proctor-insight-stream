@@ -9,6 +9,13 @@ const REPORTS_BASE = USE_DEV_PROXY ? "" : API_BASE_URL;
 export const API_ENDPOINTS = {
   getReport: (sessionId: string) => `${REPORTS_BASE}/reports/report/${sessionId}`,
   getCandidateReports: (candidateId: string) => `${REPORTS_BASE}/reports/candidate/${candidateId}`,
+  getBatchReports: (batchId: string) => {
+    const backendUrl = import.meta.env.DEV ? 'http://localhost:8000' : API_BASE_URL;
+    return `${backendUrl}/api/v1/proctoring/reports/batch/${batchId}`;
+  },
+  batchProctoring: `${REPORTS_BASE}/proctoring/batch`,
+  batchStatus: (jobId: string) => `${REPORTS_BASE}/proctoring/batch/status/${jobId}`,
+  downloadBatch: (jobId: string) => `${REPORTS_BASE}/proctoring/batch/download/${jobId}`,
   register: () => `${API_BASE_URL.includes('localhost') ? 'http://localhost:8000' : API_BASE_URL}/auth/register`,
 } as const;
 
@@ -27,4 +34,3 @@ export const getApiHeaders = (): Record<string, string> => {
 
 
 export { API_BASE_URL };
-

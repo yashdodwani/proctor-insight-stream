@@ -11,6 +11,8 @@
     //   /{candidateId}                           → /#/report/{candidateId}
     //   /report/{candidateId}                    → /#/report/{candidateId}
     //   /reports/candidate/{candidateId}         → /#/report/{candidateId}
+    //   /batch/{batchId}                         → /#/batch/{batchId}
+    //   /reports/batch/{batchId}                 → /#/batch/{batchId}
     //   /{candidateId}#/report/{candidateId}     → already has hash, just load index
 
     (function () {
@@ -26,6 +28,13 @@
       if (!stripped || stripped === 'index.html') {
         // Root — just go home
         hashPath = '/';
+      } else if (/^reports\/batch\//.test(stripped)) {
+        // /reports/batch/{id}
+        var batchId = stripped.replace('reports/batch/', '');
+        hashPath = '/batch/' + batchId;
+      } else if (/^batch\//.test(stripped)) {
+        // /batch/{id}
+        hashPath = '/' + stripped;
       } else if (/^reports\/candidate\//.test(stripped)) {
         // /reports/candidate/{id}
         var id = stripped.replace('reports/candidate/', '');

@@ -6,8 +6,7 @@ import { SeverityBadge } from "@/components/SeverityBadge";
 import { Shield, Eye, Monitor, AlertTriangle, Download } from "lucide-react";
 import { toast } from "sonner";
 import { API_BASE_URL, API_ENDPOINTS, getApiHeaders } from "@/config/api";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import { downloadElementAsPdf } from "@/lib/pdf";
 
 interface Violation {
   type: string;
@@ -294,37 +293,7 @@ const Report = () => {
     toast.info("Generating PDF, please wait...");
 
     try {
-      const element = reportRef.current;
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-      });
-
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = pdfWidth / imgWidth;
-      const scaledHeight = imgHeight * ratio;
-      let heightLeft = scaledHeight;
-      let position = 0;
-
-      pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, scaledHeight);
-      heightLeft -= pdfHeight;
-
-      while (heightLeft > 0) {
-        position -= pdfHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, position, pdfWidth, scaledHeight);
-        heightLeft -= pdfHeight;
-      }
-
-      pdf.save(`proctoring-report-${candidateId}.pdf`);
+      await downloadElementAsPdf(reportRef.current, `proctoring-report-${candidateId}.pdf`);
       toast.success("PDF downloaded successfully!");
     } catch (error) {
       console.error("Error generating PDF:", error);
