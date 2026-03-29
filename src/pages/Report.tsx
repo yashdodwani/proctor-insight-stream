@@ -235,31 +235,46 @@ const Report = () => {
     return "text-critical";
   };
 
-  const ensureUTC = (timestamp: string) => {
-    // Backend sends UTC timestamps without 'Z' suffix, so JS parses them as local time.
-    // Append 'Z' to force UTC interpretation.
-    if (!timestamp.endsWith("Z") && !timestamp.includes("+") && !timestamp.includes("-", 10)) {
-      return timestamp + "Z";
-    }
-    return timestamp;
+  const hasExplicitTimezone = (timestamp: string) => /[zZ]$|[+-]\d{2}:\d{2}$/.test(timestamp);
+
+  const formatTimeFromNaiveIso = (timestamp: string) => {
+    const [, rawTime = "00:00:00"] = timestamp.split("T");
+    const [hh = "00", mm = "00", ss = "00"] = rawTime.split(".")[0].split(":");
+    const hour24 = Number.parseInt(hh, 10);
+    const hour12 = hour24 % 12 || 12;
+    const meridiem = hour24 >= 12 ? "PM" : "AM";
+    return `${hour12.toString().padStart(2, "0")}:${mm}:${ss} ${meridiem}`;
+  };
+
+  const formatDateFromNaiveIso = (timestamp: string) => {
+    const [rawDate = ""] = timestamp.split("T");
+    const [year, month, day] = rawDate.split("-");
+    if (!year || !month || !day) return rawDate;
+    return `${month}/${day}`;
   };
 
   const formatTimestamp = (timestamp: string) => {
-    const date = new Date(ensureUTC(timestamp));
+    if (!hasExplicitTimezone(timestamp)) {
+      return formatTimeFromNaiveIso(timestamp);
+    }
+
+    const date = new Date(timestamp);
     return date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
-      timeZone: "Asia/Kolkata",
     });
   };
 
   const formatDate = (timestamp: string) => {
-    const date = new Date(ensureUTC(timestamp));
+    if (!hasExplicitTimezone(timestamp)) {
+      return formatDateFromNaiveIso(timestamp);
+    }
+
+    const date = new Date(timestamp);
     return date.toLocaleDateString("en-US", {
       month: "2-digit",
       day: "2-digit",
-      timeZone: "Asia/Kolkata",
     });
   };
 
