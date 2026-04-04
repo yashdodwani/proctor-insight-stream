@@ -64,6 +64,7 @@ const BatchReport = () => {
   const [reports, setReports] = useState<CandidateReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingSingle, setDownloadingSingle] = useState<Record<number, boolean>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -130,6 +131,23 @@ const BatchReport = () => {
     }
   };
 
+  const downloadSinglePdf = async (report: CandidateReport, index: number) => {
+    setDownloadingSingle((prev) => ({ ...prev, [index]: true }));
+    toast.info("Generating PDF. This can take a moment...");
+
+    try {
+      const candidateId = getCandidateId(report, index);
+      const pdfBlob = await renderBatchPdfBlob(report, candidateId);
+      downloadBlob(pdfBlob, `${safeFileName(candidateId)}_report.pdf`);
+      toast.success("PDF downloaded successfully.");
+    } catch (error) {
+      console.error("PDF generation failed:", error);
+      toast.error("Failed to generate PDF. Please try again.");
+    } finally {
+      setDownloadingSingle((prev) => ({ ...prev, [index]: false }));
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -179,6 +197,7 @@ const BatchReport = () => {
                   <th className="text-left p-3 font-semibold">Integrity Score</th>
                   <th className="text-left p-3 font-semibold">Violations</th>
                   <th className="text-left p-3 font-semibold">Duration</th>
+                  <th className="text-right p-3 font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -187,6 +206,7 @@ const BatchReport = () => {
                   const integrityScore = report.report?.integrity_score ?? 0;
                   const violations = report.report?.violations?.summary?.total ?? 0;
                   const duration = report.report?.session_info?.duration_formatted || "-";
+                  const isDownloading = downloadingSingle[index];
 
                   return (
                     <tr key={`${candidateId}-${index}`} className="border-t">
@@ -194,6 +214,17 @@ const BatchReport = () => {
                       <td className="p-3">{Math.round(integrityScore)}</td>
                       <td className="p-3">{violations}</td>
                       <td className="p-3">{duration}</td>
+                      <td className="p-3 text-right">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => downloadSinglePdf(report, index)}
+                          disabled={isDownloading || downloading}
+                        >
+                          {isDownloading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                          {isDownloading ? "Generating..." : "Download PDF"}
+                        </Button>
+                      </td>
                     </tr>
                   );
                 })}
