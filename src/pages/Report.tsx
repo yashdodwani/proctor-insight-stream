@@ -14,6 +14,8 @@ interface Violation {
   timestamp: string;
   severity: "critical" | "high" | "medium" | "low";
   thumbnail?: string; // base64 encoded image
+  attempt?: number;
+  attempt_label?: string;
 }
 
 interface MonitoringStatus {
@@ -374,15 +376,28 @@ const Report = () => {
 
           {/* Violation Timeline Preview */}
           <Card className="p-8">
-            <h2 className="text-xl font-semibold mb-6">Violation Timeline</h2>
-            <div className="space-y-3">
-              {violations.timeline.slice(0, 3).map((violation, index) => (
-                <div
-                  key={index}
-                  className="flex items-start justify-between gap-4 pb-3 border-b last:border-b-0"
-                >
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    {violation.thumbnail ? (
+            <h2 className="text-xl font-semibold mb-6">Violation Timeline (Preview)</h2>
+            <div className="space-y-6">
+              {Object.entries(
+                violations.timeline.slice(0, 3).reduce((acc, violation) => {
+                  const label = violation.attempt_label || "Timeline";
+                  if (!acc[label]) acc[label] = [];
+                  acc[label].push(violation);
+                  return acc;
+                }, {} as Record<string, Violation[]>)
+              ).map(([attemptLabel, attemptViolations], attemptIndex) => (
+                <div key={`preview-attempt-${attemptIndex}`} className="space-y-3">
+                  <div className="flex items-center gap-4">
+                    <h3 className="text-sm font-semibold">{attemptLabel}</h3>
+                    <div className="flex-1 h-px bg-border"></div>
+                  </div>
+                  {attemptViolations.map((violation, index) => (
+                    <div
+                      key={`${attemptIndex}-${index}`}
+                      className="flex items-start justify-between gap-4 pb-3 border-b last:border-b-0"
+                    >
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        {violation.thumbnail ? (
                       <img
                         src={getThumbnailSrc(violation.thumbnail)}
                         alt="Violation snapshot"
@@ -412,6 +427,8 @@ const Report = () => {
                   <SeverityBadge severity={violation.severity} />
                 </div>
               ))}
+                </div>
+              ))}
             </div>
           </Card>
         </div>
@@ -419,14 +436,27 @@ const Report = () => {
         {/* Full Violation Timeline */}
         <Card className="p-8 mb-8">
           <h2 className="text-xl font-semibold mb-6">Violation Timeline</h2>
-          <div className="space-y-4">
-            {violations.timeline.map((violation, index) => (
-              <div
-                key={index}
-                className="flex items-start justify-between gap-4 p-4 bg-accent/30 rounded-lg hover:bg-accent/50 transition-colors"
-              >
-                <div className="flex items-start gap-4 flex-1">
-                  {violation.thumbnail ? (
+          <div className="space-y-8">
+            {Object.entries(
+              violations.timeline.reduce((acc, violation) => {
+                const label = violation.attempt_label || "Timeline";
+                if (!acc[label]) acc[label] = [];
+                acc[label].push(violation);
+                return acc;
+              }, {} as Record<string, Violation[]>)
+            ).map(([attemptLabel, attemptViolations], attemptIndex) => (
+              <div key={`attempt-${attemptIndex}`} className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <h3 className="text-lg font-semibold">{attemptLabel}</h3>
+                  <div className="flex-1 h-px bg-border"></div>
+                </div>
+                {attemptViolations.map((violation, index) => (
+                  <div
+                    key={`${attemptIndex}-${index}`}
+                    className="flex items-start justify-between gap-4 p-4 bg-accent/30 rounded-lg hover:bg-accent/50 transition-colors"
+                  >
+                    <div className="flex items-start gap-4 flex-1">
+                      {violation.thumbnail ? (
                     <img
                       src={getThumbnailSrc(violation.thumbnail)}
                       alt="Violation snapshot"
@@ -467,6 +497,8 @@ const Report = () => {
                   </div>
                 </div>
                 <SeverityBadge severity={violation.severity} />
+              </div>
+            ))}
               </div>
             ))}
           </div>

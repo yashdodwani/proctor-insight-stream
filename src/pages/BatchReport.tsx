@@ -8,7 +8,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { API_ENDPOINTS, getApiHeaders } from "@/config/api";
 import { BatchReportPdfTemplate, type CandidateReport } from "@/components/BatchReportPdfTemplate";
-import { downloadBlob, elementToPdfBlob } from "@/lib/pdf";
+import { elementToPdfBlob } from "@/lib/pdf";
+import { saveAs } from "file-saver";
 
 const safeFileName = (value: string) => value.replace(/[^a-zA-Z0-9_-]/g, "_");
 
@@ -120,8 +121,8 @@ const BatchReport = () => {
         zip.file(`${safeFileName(candidateId)}_report.pdf`, pdfBlob);
       }
 
-      const zipBlob = await zip.generateAsync({ type: "blob" });
-      downloadBlob(zipBlob, `batch_reports_${safeFileName(batchId)}.zip`);
+      const zipContent = await zip.generateAsync({ type: "blob" });
+      saveAs(zipContent, `Batch_Reports_${batchId}.zip`);
       toast.success("Batch ZIP downloaded successfully.");
     } catch (error) {
       console.error("Batch ZIP generation failed:", error);
@@ -138,7 +139,7 @@ const BatchReport = () => {
     try {
       const candidateId = getCandidateId(report, index);
       const pdfBlob = await renderBatchPdfBlob(report, candidateId);
-      downloadBlob(pdfBlob, `${safeFileName(candidateId)}_report.pdf`);
+      saveAs(pdfBlob, `${safeFileName(candidateId)}_report.pdf`);
       toast.success("PDF downloaded successfully.");
     } catch (error) {
       console.error("PDF generation failed:", error);
@@ -184,7 +185,7 @@ const BatchReport = () => {
           </div>
           <Button onClick={downloadAllAsZip} disabled={downloading || reports.length === 0}>
             {downloading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-            {downloading ? "Generating ZIP..." : "Download All as ZIP"}
+            {downloading ? "Generating ZIP..." : "Download Batch Reports"}
           </Button>
         </div>
 

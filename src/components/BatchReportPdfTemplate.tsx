@@ -8,6 +8,8 @@ export interface Violation {
   timestamp: string;
   severity: "critical" | "high" | "medium" | "low";
   thumbnail?: string;
+  attempt?: number;
+  attempt_label?: string;
 }
 
 export interface MonitoringStatus {
@@ -97,11 +99,24 @@ export const BatchReportPdfTemplate = ({ candidateId, reportData }: Props) => {
 
       <Card className="p-6 mb-8">
         <h2 className="text-xl font-semibold mb-4">Violation Timeline</h2>
-        <div className="space-y-3">
-          {report.violations.timeline.map((violation, idx) => (
-            <div key={idx} className="flex items-start justify-between gap-4 p-3 border rounded-md">
-              <div className="flex items-start gap-3 flex-1">
-                {violation.thumbnail ? (
+        <div className="space-y-6">
+          {Object.entries(
+            report.violations.timeline.reduce((acc, violation) => {
+              const label = violation.attempt_label || "Timeline";
+              if (!acc[label]) acc[label] = [];
+              acc[label].push(violation);
+              return acc;
+            }, {} as Record<string, Violation[]>)
+          ).map(([attemptLabel, attemptViolations], attemptIndex) => (
+            <div key={`attempt-${attemptIndex}`} className="space-y-3">
+              <div className="flex items-center gap-4">
+                <h3 className="text-[15px] font-semibold text-gray-700">{attemptLabel}</h3>
+                <div className="flex-1 h-px bg-gray-200"></div>
+              </div>
+              {attemptViolations.map((violation, idx) => (
+                <div key={idx} className="flex items-start justify-between gap-4 p-3 border rounded-md">
+                  <div className="flex items-start gap-3 flex-1">
+                    {violation.thumbnail ? (
                   <img src={getThumbnailSrc(violation.thumbnail)} alt="Violation" className="w-20 h-20 object-cover rounded border" />
                 ) : (
                   <div className="w-20 h-20 rounded border flex items-center justify-center bg-gray-100 text-gray-400">
@@ -113,7 +128,9 @@ export const BatchReportPdfTemplate = ({ candidateId, reportData }: Props) => {
                   <p className="text-sm">{violation.message}</p>
                 </div>
               </div>
-              <SeverityBadge severity={violation.severity} />
+                  <SeverityBadge severity={violation.severity} />
+                </div>
+              ))}
             </div>
           ))}
         </div>
