@@ -7,7 +7,7 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const useDevProxy = env.VITE_USE_DEV_PROXY === "true";
-  const apiBaseUrl = env.VITE_API_BASE_URL || "https://proctoring.formapply.in";
+  const apiBaseUrl = env.VITE_API_BASE_URL || "https://testproctoring.formapply.in";
   const isLocalBackend = apiBaseUrl.includes("localhost") || apiBaseUrl.includes("127.0.0.1");
 
   return {

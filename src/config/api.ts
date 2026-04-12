@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://proctoring.formapply.in";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://testproctoring.formapply.in";
 
 // Dev proxy is opt-in. Defaulting to direct backend calls avoids local DNS
 // resolution issues in Node-based dev proxy (e.g. ENOTFOUND in Vite).

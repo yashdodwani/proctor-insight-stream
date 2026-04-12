@@ -26,14 +26,14 @@ VITE_USE_DEV_PROXY=false
 
 For production backend:
 ```env
-VITE_API_BASE_URL=https://proctoring.formapply.in
+VITE_API_BASE_URL=https://testproctoring.formapply.in
 VITE_API_KEY=your_production_key
 VITE_USE_DEV_PROXY=false
 ```
 
 **Backend Setup:**
 - **Local**: Run `uvicorn main:app --reload --port 8001` in your Python backend
-- **Production**: Backend is at `https://proctoring.formapply.in`
+- **Production**: Backend is at `https://testproctoring.formapply.in`
 
 **Vite Proxy:**
 - Set `VITE_USE_DEV_PROXY=true` when local Vite proxy should forward to backend

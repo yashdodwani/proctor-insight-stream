@@ -72,7 +72,7 @@
 
         <div class="test-section">
             <h2>Configuration</h2>
-            <p><strong>API Base URL:</strong> <code>https://proctoring.formapply.in</code></p>
+            <p><strong>API Base URL:</strong> <code>https://testproctoring.formapply.in</code></p>
             <p><strong>Frontend Origin:</strong> <code id="origin"></code></p>
         </div>
 
@@ -115,7 +115,7 @@
         async function testCandidateReport() {
             const candidateId = document.getElementById('candidateId').value;
             const resultDiv = document.getElementById('candidateResult');
-            const apiUrl = `https://proctoring.formapply.in/reports/candidate/${candidateId}`;
+            const apiUrl = `https://testproctoring.formapply.in/reports/candidate/${candidateId}`;
 
             resultDiv.innerHTML = '<p class="status pending">Testing...</p>';
 
@@ -185,7 +185,7 @@ Access-Control-Allow-Headers: Content-Type, Authorization</pre>
         async function testSessionReport() {
             const sessionId = document.getElementById('sessionId').value;
             const resultDiv = document.getElementById('sessionResult');
-            const apiUrl = `https://proctoring.formapply.in/reports/report/${sessionId}`;
+            const apiUrl = `https://testproctoring.formapply.in/reports/report/${sessionId}`;
 
             resultDiv.innerHTML = '<p class="status pending">Testing...</p>';
 
@@ -221,7 +221,7 @@ Access-Control-Allow-Headers: Content-Type, Authorization</pre>
             const resultDiv = document.getElementById('corsResult');
             resultDiv.innerHTML = '<p class="status pending">Checking CORS...</p>';
 
-            const apiUrl = 'https://proctoring.formapply.in/reports/candidate/test';
+            const apiUrl = 'https://testproctoring.formapply.in/reports/candidate/test';
 
             try {
                 // Try to make a request

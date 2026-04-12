@@ -3,12 +3,12 @@
 ## Problem
 
 The S3-hosted frontend (`http://proctoringreports.s3-website-us-east-1.amazonaws.com`) makes
-cross-origin requests to `https://proctoring.formapply.in`. The backend must respond with the
+cross-origin requests to `https://testproctoring.formapply.in`. The backend must respond with the
 appropriate CORS headers, otherwise browsers will block the response.
 
 ## Required Backend CORS Headers
 
-The backend at `https://proctoring.formapply.in` must include:
+The backend at `https://testproctoring.formapply.in` must include:
 
 ```
 Access-Control-Allow-Origin: http://proctoringreports.s3-website-us-east-1.amazonaws.com
@@ -30,7 +30,7 @@ during local development. See `vite.config.ts`:
 ```ts
 proxy: {
   '/reports': {
-    target: 'https://proctoring.formapply.in',
+    target: 'https://testproctoring.formapply.in',
     changeOrigin: true,
   },
 }
