@@ -15,7 +15,7 @@ A real-time monitoring and reporting dashboard for proctoring insights.
 cp .env.example .env
 ```
 
-2. Update `.env` with your configuration:
+2. Update `.env` with your configuration for local development:
 ```env
 # For local backend development (e.g., uvicorn on port 8001):
 VITE_API_BASE_URL=http://127.0.0.1:8001
@@ -30,6 +30,8 @@ VITE_API_BASE_URL=https://testproctoring.formapply.in
 VITE_API_KEY=your_production_key
 VITE_USE_DEV_PROXY=false
 ```
+
+For production deployments, create `.env.production` and put the production values there.
 
 **Backend Setup:**
 - **Local**: Run `uvicorn main:app --reload --port 8001` in your Python backend
@@ -56,9 +58,14 @@ npm run dev
 # Build for production
 npm run build
 
+# Set production VITE_* vars in .env.production
+cp .env.example .env.production
+
 # Deploy to AWS S3
 ./deploy.sh
 ```
+
+`deploy.sh` prefers `.env.production`, falls back to `.env`, and blocks deploys if `VITE_API_BASE_URL` points to localhost/127.0.0.1.
 
 ## 🛠️ Tech Stack
 

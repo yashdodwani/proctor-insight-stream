@@ -37,15 +37,36 @@ echo ""
 # Build the application
 echo "📦 Building application..."
 
-# Load .env so Vite can inline VITE_* vars into the production bundle
-if [ -f ".env" ]; then
-  # Export only VITE_* variables (safe to expose — they end up in the JS bundle anyway)
+# Prefer .env.production for deploy builds. Fall back to .env for backward compatibility.
+ENV_FILE=""
+if [ -f ".env.production" ]; then
+  ENV_FILE=".env.production"
+elif [ -f ".env" ]; then
+  ENV_FILE=".env"
+  echo "⚠️  .env.production not found, falling back to .env"
+fi
+
+if [ -n "$ENV_FILE" ]; then
+  # Export only VITE_* variables (these are intentionally inlined into client JS by Vite).
   set -a
   # shellcheck disable=SC1091
-  source <(grep '^VITE_' .env)
+  source <(grep -E '^VITE_[A-Z0-9_]*=' "$ENV_FILE")
   set +a
-  echo "✅ Loaded VITE_* vars from .env"
+  echo "✅ Loaded VITE_* vars from $ENV_FILE"
 fi
+
+if [ -z "${VITE_API_BASE_URL:-}" ]; then
+  echo "❌ VITE_API_BASE_URL is not set. Add it in .env.production (recommended) or .env"
+  exit 1
+fi
+
+if [[ "$VITE_API_BASE_URL" == *"localhost"* || "$VITE_API_BASE_URL" == *"127.0.0.1"* ]]; then
+  echo "❌ Refusing production deploy with local API URL: $VITE_API_BASE_URL"
+  echo "   Set VITE_API_BASE_URL=https://testproctoring.formapply.in in .env.production"
+  exit 1
+fi
+
+echo "🌐 Using API base URL: $VITE_API_BASE_URL"
 
 npm run build
 
@@ -61,6 +82,12 @@ fi
 
 echo "✅ Build successful!"
 echo ""
+
+# Guardrail: ensure report API endpoint URLs were not inlined with localhost.
+if grep -RInE "http://(127\.0\.0\.1|localhost):8001/reports" "$BUILD_DIR" > /dev/null; then
+    echo "❌ Build output still contains local report API URLs. Check VITE_API_BASE_URL and rebuild."
+    exit 1
+fi
 
 # Show what will be deployed
 echo "📋 Files to deploy:"
